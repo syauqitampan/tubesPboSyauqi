@@ -2,13 +2,13 @@
 
 import sqlite3
 import pandas as pd
-from konfigurasi import DB_PATH  # Gunakan path dari konfigurasi
+from konfigurasi import DB_PATH  
 
 def get_db_connection() -> sqlite3.Connection | None:
     """Membuka dan mengembalikan koneksi baru ke database SQLite."""
     try:
         conn = sqlite3.connect(DB_PATH, timeout=10, detect_types=sqlite3.PARSE_DECLTYPES)
-        conn.row_factory = sqlite3.Row  # Akses kolom by name
+        conn.row_factory = sqlite3.Row  
         return conn
     except sqlite3.Error as e:
         print(f"ERROR [database.py] Koneksi DB gagal: {e}")
@@ -87,7 +87,7 @@ def setup_database_initial():
         cursor = conn.cursor()
         sql_create_table = """
         CREATE TABLE IF NOT EXISTS laporan (
-            id_laporan INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             nama TEXT NOT NULL,
             deskripsi TEXT NOT NULL,
             tempat TEXT NOT NULL,

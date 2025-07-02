@@ -13,7 +13,7 @@ def setup_database():
 
         sql_create_table = """
         CREATE TABLE IF NOT EXISTS laporan (
-            id_laporan INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             nama TEXT NOT NULL,
             deskripsi TEXT NOT NULL,
             tempat TEXT NOT NULL,

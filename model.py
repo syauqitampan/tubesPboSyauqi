@@ -31,7 +31,6 @@ class Laporan:
             f"Laporan(ID:{self.id_laporan}, Tgl:{self.tanggal.strftime('%Y-%m-%d')}, "
             f"Tempat:{self.tempat}, Kategori:{self.kategori}, Jenis:{self.jenis_laporan})"
         )
-
     def to_dict(self) -> dict:
         return {
             "id_laporan": self.id_laporan,

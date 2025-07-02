@@ -1,5 +1,3 @@
-# manajerLaporanBarang.py
-
 import datetime
 import pandas as pd
 from model import Laporan
@@ -23,7 +21,6 @@ class LaporanBarang:
     def tambah_laporan(self, laporan: Laporan) -> bool:
         if not isinstance(laporan, Laporan):
             print("Data bukan instance dari kelas Laporan")
-            print("[DEBUG] Tipe laporan:", type(laporan))
             return False
 
         sql = """
@@ -40,7 +37,7 @@ class LaporanBarang:
         )
         last_id = database.execute_query(sql, params)
         if last_id is not None:
-            laporan.id_laporan = last_id
+            laporan.id = last_id
             return True
         return False
 
@@ -68,7 +65,6 @@ class LaporanBarang:
         return laporan_list
 
     def get_laporan_by_id(self, laporan_id: int) -> Laporan | None:
-        """Mengambil satu laporan berdasarkan ID-nya."""
         sql = """
         SELECT id, nama, deskripsi, tempat, kategori, tanggal, jenis_laporan
         FROM laporan
@@ -87,29 +83,25 @@ class LaporanBarang:
             )
         return None
 
-
     def get_dataframe_laporan(self, filter_jenis: str | None = None, filter_kategori: str | None = None) -> pd.DataFrame:
-        query = "SELECT id, nama, tanggal, kategori, deskripsi, tempat, jenis_laporan FROM laporan WHERE 1=1" # Tambahkan 'id' di sini
+        query = "SELECT id, nama, tanggal, kategori, deskripsi, tempat, jenis_laporan FROM laporan WHERE 1=1"
         params = []
 
         if filter_jenis and filter_jenis != "Semua":
             query += " AND jenis_laporan = ?"
             params.append(filter_jenis)
-        
+
         if filter_kategori and filter_kategori != "Semua":
             query += " AND kategori = ?"
             params.append(filter_kategori)
 
         query += " ORDER BY tanggal DESC, id DESC"
         df = database.get_dataframe(query, params=tuple(params))
-
-        # Jika ingin menampilkan kolom tertentu, sesuaikan di sini
-        # Contoh: df = df[['id', 'nama', 'tanggal', 'kategori', 'deskripsi', 'tempat', 'jenis_laporan']]
         return df
 
     def cari_laporan_berdasarkan_tempat(self, tempat: str) -> list[Laporan]:
         sql = """
-        SELECT id,nama, deskripsi, tempat, kategori, tanggal, jenis_laporan
+        SELECT id, nama, deskripsi, tempat, kategori, tanggal, jenis_laporan
         FROM laporan
         WHERE tempat LIKE ?
         ORDER BY tanggal DESC
@@ -146,10 +138,8 @@ class LaporanBarang:
         df = database.get_dataframe(sql)
         return df
 
-    # --- KODE BARU UNTUK EDIT DAN HAPUS ---
     def update_laporan(self, laporan: Laporan) -> bool:
-        """Memperbarui laporan yang sudah ada di database."""
-        if not isinstance(laporan, Laporan) or laporan.id_laporan is None:
+        if not isinstance(laporan, Laporan) or laporan.id is None:
             print("Objek Laporan tidak valid atau ID tidak ada untuk update.")
             return False
 
@@ -165,23 +155,15 @@ class LaporanBarang:
             laporan.kategori,
             laporan.tanggal.strftime("%Y-%m-%d"),
             laporan.jenis_laporan,
-            laporan.id_laporan 
+            laporan.id_laporan
         )
-        print("[DEBUG] Data untuk update:")
-        print("ID:", laporan.id_laporan)
-        print("Nama:", laporan.nama)
-        print("Deskripsi:", laporan.deskripsi)
-        print("Tempat:", laporan.tempat)
-        print("Kategori:", laporan.kategori)
-        print("Tanggal:", laporan.tanggal)
-        print("Jenis:", laporan.jenis_laporan)
-
         return database.execute_query(sql, params) is not None
-    def hapus_laporan(self, id_laporan: int) -> bool:
+
+    def hapus_laporan(self, laporan_id: int) -> bool:
+        sql = "DELETE FROM laporan WHERE id = ?"
         try:
-            self.kursor.execute("DELETE FROM laporan WHERE id_laporan = ?", (id_laporan,))
-            self.koneksi.commit()
-            return self.kursor.rowcount > 0
+            result = database.execute_query(sql, (laporan_id,))
+            return result is not None
         except Exception as e:
             print("[ERROR] Gagal menghapus laporan:", e)
             return False
