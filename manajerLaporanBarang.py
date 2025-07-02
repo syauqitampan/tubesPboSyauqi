@@ -177,8 +177,11 @@ class LaporanBarang:
         print("Jenis:", laporan.jenis_laporan)
 
         return database.execute_query(sql, params) is not None
-
-    def hapus_laporan(self, laporan_id: int) -> bool:
-        """Menghapus laporan dari database berdasarkan ID."""
-        sql = "DELETE FROM laporan WHERE id = ?"
-        return database.execute_query(sql, (laporan_id,)) is not None
+    def hapus_laporan(self, id_laporan: int) -> bool:
+        try:
+            self.kursor.execute("DELETE FROM laporan WHERE id_laporan = ?", (id_laporan,))
+            self.koneksi.commit()
+            return self.kursor.rowcount > 0
+        except Exception as e:
+            print("[ERROR] Gagal menghapus laporan:", e)
+            return False

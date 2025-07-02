@@ -76,11 +76,6 @@ manajer = get_manajer_laporan()
 
 def halaman_tambah_laporan(manajer: LaporanBarang):
     st.header("Tambah Laporan Barang")
-
-    button = st.button("Buka Form Tambah Laporan")
-    if not button:
-        st.info("Klik tombol di atas untuk membuka form tambah laporan.")
-        return
     
     with st.form(key="tambah_laporan_form_main", clear_on_submit=True):
         nama = st.text_input("Nama Pelapor*", placeholder="Contoh: Syauqi", key="tambah_laporan_nama_input")
@@ -118,7 +113,7 @@ def halaman_tambah_laporan(manajer: LaporanBarang):
 
 def halaman_daftar_laporan(manajer: LaporanBarang):
     st.header(" 📋 Daftar Laporan Barang")
-    
+
     if 'edit_mode' not in st.session_state:
         st.session_state.edit_mode = False
         st.session_state.laporan_to_edit_id = None
@@ -129,54 +124,53 @@ def halaman_daftar_laporan(manajer: LaporanBarang):
     if 'laporan_to_delete_id' not in st.session_state:
         st.session_state.laporan_to_delete_id = None
 
-
     if st.session_state.edit_mode:
         halaman_edit_laporan(manajer, st.session_state.laporan_to_edit_id)
         return
 
     with st.spinner("Memuat data..."):
-        df = manajer.get_dataframe_laporan() # df ini akan punya kolom 'id'
-    
+        df = manajer.get_dataframe_laporan()
+
     if df.empty:
         st.info("Belum ada laporan yang tercatat.")
     else:
         df_display = df.copy()
         df_display['tanggal'] = pd.to_datetime(df_display['tanggal']).dt.strftime('%d-%m-%Y')
-        
+
         report_options_dict = {
-            f"{row['jenis_laporan']} - {row['nama']} - {row['deskripsi']} ({row['tanggal']})": row['id'] 
+            f"{row['jenis_laporan']} - {row['nama']} - {row['deskripsi']} ({row['tanggal']})": row['id']
             for index, row in df_display.iterrows()
         }
-        
+
         display_options = ["Pilih Laporan untuk Detail/Edit/Hapus"] + list(report_options_dict.keys())
         selected_report_display_text = st.selectbox(
-            "Pilih Laporan:", 
+            "Pilih Laporan:",
             options=display_options,
             index=0,
             key="select_report_for_detail_halaman_daftar"
         )
-        
+
         selected_laporan_id = None
         if selected_report_display_text != "Pilih Laporan untuk Detail/Edit/Hapus":
             selected_laporan_id = report_options_dict[selected_report_display_text]
             laporan_detail = manajer.get_laporan_by_id(selected_laporan_id)
-            
+
             if laporan_detail:
-                st.subheader(f"Detail Laporan #{laporan_detail.id_laporan}") 
+                st.subheader(f"Detail Laporan #{laporan_detail.id_laporan}")
                 st.write(f"**Jenis Laporan:** {laporan_detail.jenis_laporan}")
                 st.write(f"**Nama Pelapor:** {laporan_detail.nama}")
                 st.write(f"**Tanggal Kejadian:** {laporan_detail.tanggal.strftime('%d-%m-%Y')}")
                 st.write(f"**Tempat Kejadian:** {laporan_detail.tempat}")
                 st.write(f"**Kategori:** {laporan_detail.kategori}")
                 st.write(f"**Deskripsi:** {laporan_detail.deskripsi}")
-                
+
                 col_edit, col_delete = st.columns(2)
                 with col_edit:
                     if st.button("Edit Laporan", key=f"edit_btn_laporan_{selected_laporan_id}"):
                         st.session_state.edit_mode = True
                         st.session_state.laporan_to_edit_id = selected_laporan_id
                         st.rerun()
-                
+
                 with col_delete:
                     if st.session_state.get('user_role') == 'admin':
                         if st.button("Hapus Laporan", key=f"delete_btn_laporan_{selected_laporan_id}"):
@@ -185,21 +179,30 @@ def halaman_daftar_laporan(manajer: LaporanBarang):
                             st.rerun()
                     else:
                         st.info("Hanya Admin yang dapat menghapus laporan.")
-                        
-                if st.session_state.is_admin_for_action and st.session_state.laporan_to_delete_id == selected_laporan_id:
-                    st.session_state.is_admin_for_action = False 
-                    st.session_state.show_admin_modal = False
-                    
-                    if manajer.hapus_laporan(selected_laporan_id): 
-                        st.success("Laporan berhasil dihapus oleh Admin.")
-                        st.cache_data.clear()
-                        del st.session_state.laporan_to_delete_id 
-                        st.rerun()
-                    else:
-                        st.error("Gagal menghapus laporan.")
 
             else:
                 st.error("Laporan tidak ditemukan.")
+
+        # Jalankan penghapusan jika admin sudah autentikasi dan ID tersedia
+        if (
+            st.session_state.get("is_admin_for_action", False)
+            and st.session_state.get("laporan_to_delete_id") is not None
+        ):
+            laporan_id_hapus = st.session_state["laporan_to_delete_id"]
+
+            if isinstance(laporan_id_hapus, int):
+                berhasil = manajer.hapus_laporan(laporan_id_hapus)
+                if berhasil:
+                    st.success("Laporan berhasil dihapus oleh Admin.")
+                    st.cache_data.clear()
+                    st.session_state.is_admin_for_action = False
+                    st.session_state.show_admin_modal = False
+                    del st.session_state["laporan_to_delete_id"]
+                    st.rerun()
+                else:
+                    st.error("Gagal menghapus laporan.")
+            else:
+                st.error("ID laporan tidak valid.")
 
         st.markdown("---")
         st.subheader("📌 Ringkasan Semua Laporan")
